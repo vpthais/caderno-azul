@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Painel protegido</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#128274;</text></svg>">
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
+       background:#f4f4f2;color:#1b1b1b;
+       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .caixa{width:100%;max-width:340px;padding:28px 24px;background:#fff;border-radius:14px;
+         box-shadow:0 1px 3px rgba(0,0,0,.08);text-align:center}
+  .cad{font-size:34px;line-height:1}
+  h1{font-size:17px;margin:14px 0 4px;font-weight:600}
+  p{font-size:13px;color:#666;margin:0 0 18px}
+  input{width:100%;padding:12px 14px;font-size:16px;border:1px solid #ddd;border-radius:9px;
+        outline:none;text-align:center}
+  input:focus{border-color:#1b1b1b}
+  button{width:100%;margin-top:10px;padding:12px;font-size:15px;font-weight:600;color:#fff;
+         background:#1b1b1b;border:0;border-radius:9px;cursor:pointer}
+  button[disabled]{opacity:.55;cursor:default}
+  .erro{margin-top:12px;font-size:13px;color:#a4232b;min-height:18px}
+</style>
+</head>
+<body>
+<div class="caixa">
+  <div class="cad">&#128274;</div>
+  <h1>Painel protegido</h1>
+  <div id="form">
+  <p>Digite a senha para abrir.</p>
+  <input id="s" type="password" autocomplete="current-password" placeholder="senha"
+         autofocus onkeydown="if(event.key==='Enter')abrir()">
+  <label style="display:flex;gap:8px;align-items:center;justify-content:center;
+                margin-top:12px;font-size:13px;color:#444;cursor:pointer">
+    <input id="lembrar" type="checkbox" checked
+           style="width:auto;margin:0;accent-color:#1b1b1b">
+    Lembrar neste aparelho
+  </label>
+  <button id="b" onclick="abrir()">Entrar</button>
+  </div>
+  <p id="auto" style="display:none;color:#444">Abrindo&hellip;</p>
+  <div class="erro" id="e"></div>
+  <p id="diag" style="margin-top:14px;font-size:11px;color:#888"></p>
+</div>
+<script>
+const COFRE = {"sal": "l1Zd90KDChbBv33DlHWAsA==", "iv": "CLc6p+Ddb6qa0CNi", "dados": "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", "voltas": 300000, "gz": true};
+
+// A CHAVE DEBAIXO DO TAPETE (v161, pedido da Thais: "toda hora pede a
+// senha... ja foi conectado nesse dispositivo, nao pedir mais"). Com o
+// "Lembrar neste aparelho" marcado, a senha fica guardada NESTE navegador
+// (localStorage) e o cofre abre sozinho nas proximas visitas - inclusive
+// no "voltar" da pagina do produto. Para deslogar o aparelho: abrir o
+// endereco com ?sair no final. Se a senha do cofre mudar, a guardada para
+// de abrir e e descartada sozinha.
+const GAVETA = 'ck_a';
+// A CHAVE PRONTA (v269): depois de abrir uma vez, a chave ja moida fica
+// guardada junto com o sal que a gerou. Enquanto o cofre publicar com o
+// mesmo sal (o sal fixo da casa), a proxima visita abre na hora, sem o
+// moedor. Se o sal mudar (senha nova), a chave pronta e descartada e o
+// caminho da senha lembrada assume.
+const GAVETA_CHAVE = 'ck_b';
+
+const bytes = (b64) => Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+
+// A GAVETA DUPLA (v270, flagra dela no iPhone: "continua pedindo senha").
+// Alguns navegadores de celular limpam o localStorage sem avisar (modo
+// privado, limpeza do sistema, navegador dentro de app). O cookie e a
+// segunda gaveta: a senha lembrada vai nas duas, e na volta vale a que
+// tiver sobrevivido. E a tela diz, em letra miuda, POR QUE esta pedindo
+// senha - para ela me contar em vez de eu adivinhar.
+const COOKIE = 'ck';
+function guardarCookie(valor){
+  try { document.cookie = COOKIE + '=' + encodeURIComponent(valor) +
+        '; max-age=' + (30*24*3600) + '; path=/; SameSite=Lax; Secure'; } catch (e) {}
+}
+function lerCookie(){
+  try {
+    const m = document.cookie.match(new RegExp('(?:^|; )' + COOKIE + '=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : null;
+  } catch (e) { return null; }
+}
+function apagarCookie(){
+  try { document.cookie = COOKIE + '=; max-age=0; path=/; SameSite=Lax; Secure'; } catch (e) {}
+}
+function diagnostico(texto){
+  const d = document.getElementById('diag');
+  if (d) d.textContent = texto;
+}
+function memoriaFunciona(){
+  try { localStorage.setItem('ck_t', '1'); localStorage.removeItem('ck_t'); return true; }
+  catch (e) { return false; }
+}
+
+function modoAutomatico(){
+  const f = document.getElementById('form'), a = document.getElementById('auto');
+  if (f) f.style.display = 'none';
+  if (a) a.style.display = '';
+}
+function modoManual(){
+  const f = document.getElementById('form'), a = document.getElementById('auto');
+  if (f) f.style.display = '';
+  if (a) a.style.display = 'none';
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  if (new URLSearchParams(location.search).has('sair')) {
+    try { localStorage.removeItem(GAVETA); localStorage.removeItem(GAVETA_CHAVE); } catch (e) {}
+    apagarCookie();
+    diagnostico('Este aparelho foi desconectado (?sair).');
+    return;
+  }
+  // 1) a chave pronta, se for deste sal: abre sem moedor
+  let pronta = null;
+  try { pronta = JSON.parse(localStorage.getItem(GAVETA_CHAVE) || 'null'); } catch (e) {}
+  if (pronta && pronta.sal === COFRE.sal && pronta.chave) {
+    modoAutomatico();
+    try {
+      const chave = await crypto.subtle.importKey('raw', bytes(pronta.chave),
+        {name:'AES-GCM'}, false, ['decrypt']);
+      if (await abrirComChave(chave)) return;
+    } catch (e) {}
+    try { localStorage.removeItem(GAVETA_CHAVE); } catch (e) {}
+  }
+  // 2) a senha lembrada (localStorage, senao o cookie): passa pelo moedor
+  //    uma vez e guarda a chave pronta
+  let guardada = null;
+  try { guardada = localStorage.getItem(GAVETA); } catch (e) {}
+  const doCookie = lerCookie();
+  if (!guardada && doCookie) guardada = doCookie;
+  if (guardada) {
+    modoAutomatico();
+    try { abrir(decodeURIComponent(escape(atob(guardada))), true); return; }
+    catch (e) { try { localStorage.removeItem(GAVETA); } catch (e2) {} apagarCookie(); modoManual(); }
+  }
+  // 3) nada guardado: diz por que esta pedindo
+  const mem = memoriaFunciona();
+  diagnostico(mem
+    ? 'Nenhuma senha guardada neste navegador ainda (memória do navegador: ok, cookie: '
+      + (document.cookie ? 'ok' : 'vazio') + ').'
+    : 'A memória deste navegador está bloqueada (modo privado ou navegador de dentro de app) - '
+      + 'a senha não consegue ficar guardada aqui.');
+});
+
+async function abrirComChave(chave){
+  const erro = document.getElementById('e');
+  const aberto = await crypto.subtle.decrypt(
+    {name:'AES-GCM', iv: bytes(COFRE.iv)}, chave, bytes(COFRE.dados));
+  let html;
+  if (COFRE.gz) {
+    if (!('DecompressionStream' in window)) {
+      erro.textContent = 'Navegador muito antigo para abrir - atualize o navegador.';
+      return false;
+    }
+    const fluxo = new Blob([aberto]).stream().pipeThrough(new DecompressionStream('gzip'));
+    html = await new Response(fluxo).text();
+  } else {
+    html = new TextDecoder().decode(aberto);
+  }
+  document.open(); document.write(html); document.close();
+  return true;
+}
+
+async function abrir(senhaLembrada, automatico){
+  const campo = document.getElementById('s');
+  const botao = document.getElementById('b');
+  const erro  = document.getElementById('e');
+  const senha = automatico ? senhaLembrada : campo.value;
+  if (!senha) return;
+
+  botao.disabled = true; botao.textContent = 'Abrindo...'; erro.textContent = '';
+  // um respiro para o navegador desenhar o "Abrindo..." antes de travar no moedor
+  await new Promise(r => setTimeout(r, 30));
+
+  try {
+    const base = await crypto.subtle.importKey(
+      'raw', new TextEncoder().encode(senha), 'PBKDF2', false, ['deriveKey']);
+    const chave = await crypto.subtle.deriveKey(
+      {name:'PBKDF2', salt: bytes(COFRE.sal), iterations: COFRE.voltas, hash:'SHA-256'},
+      base, {name:'AES-GCM', length:256}, true, ['decrypt']);
+    // Se a senha estiver errada, isto aqui ESTOURA - e é essa a graça: não
+    // existe um "confere a senha" separado que alguém possa contornar. Ou a
+    // chave abre o conteúdo, ou não há conteúdo nenhum para mostrar.
+    const aberto = await crypto.subtle.decrypt(
+      {name:'AES-GCM', iv: bytes(COFRE.iv)}, chave, bytes(COFRE.dados));
+
+    let html;
+    if (COFRE.gz) {
+      // o conteudo veio na mala a vacuo (gzip): desamassar depois de abrir
+      if (!('DecompressionStream' in window)) {
+        erro.textContent = 'Navegador muito antigo para abrir - atualize o navegador.';
+        botao.disabled = false; botao.textContent = 'Entrar';
+        return;
+      }
+      const fluxo = new Blob([aberto]).stream()
+        .pipeThrough(new DecompressionStream('gzip'));
+      html = await new Response(fluxo).text();
+    } else {
+      html = new TextDecoder().decode(aberto);
+    }
+    // a senha que abriu o cofre e a que merece ficar guardada - por isso o
+    // guardado acontece DEPOIS do decrypt dar certo, nunca antes
+    try {
+      if (automatico || document.getElementById('lembrar').checked) {
+        const codificada = btoa(unescape(encodeURIComponent(senha)));
+        guardarCookie(codificada);
+        localStorage.setItem(GAVETA, codificada);
+        // a chave pronta, para a proxima visita abrir sem moedor
+        try {
+          const crua = await crypto.subtle.exportKey('raw', chave);
+          localStorage.setItem(GAVETA_CHAVE, JSON.stringify({sal: COFRE.sal, chave: b64(crua)}));
+        } catch (e) {}
+      } else {
+        apagarCookie();
+        localStorage.removeItem(GAVETA);
+        localStorage.removeItem(GAVETA_CHAVE);
+      }
+    } catch (e) {}
+    document.open(); document.write(html); document.close();
+  } catch (e) {
+    if (automatico) {
+      // a senha guardada nao abriu (o cofre mudou de senha?) - descarta e
+      // volta a pedir, sem drama
+      try { localStorage.removeItem(GAVETA); localStorage.removeItem(GAVETA_CHAVE); } catch (e2) {}
+      apagarCookie();
+      modoManual();
+      diagnostico('A senha guardada neste aparelho n\u00e3o abriu o cofre (a senha do painel mudou?).');
+      erro.textContent = 'A senha guardada n\u00e3o abriu mais - digite de novo.';
+      botao.disabled = false; botao.textContent = 'Entrar';
+      return;
+    }
+    erro.textContent = 'Senha errada.';
+    botao.disabled = false; botao.textContent = 'Entrar';
+    campo.value = ''; campo.focus();
+  }
+}
+</script>
+</body>
+</html>
